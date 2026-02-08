@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTerrainHeight } from '../utils/terrain';
+import { CharacterModel } from './CharacterModel';
 
 export const Player = () => {
     const playerRef = useRef<THREE.Group>(null);
@@ -71,30 +72,26 @@ export const Player = () => {
         const terrainHeight = getTerrainHeight(playerRef.current.position.x, playerRef.current.position.z);
         playerRef.current.position.y = terrainHeight;
 
-        // Camera Follow
-        const cameraOffset = new THREE.Vector3(0, 3, 6);
+        // Camera Follow (Closer)
+        const cameraOffset = new THREE.Vector3(0, 3, 5);
         cameraOffset.applyQuaternion(playerRef.current.quaternion);
         const targetPosition = playerRef.current.position.clone().add(cameraOffset);
 
         // Smooth camera movement
         camera.position.lerp(targetPosition, 0.1);
 
-        // Look at player
+        // Look at player (Adjusted for character height)
         const lookAtTarget = playerRef.current.position.clone().add(new THREE.Vector3(0, 1.5, 0));
         camera.lookAt(lookAtTarget);
     });
 
     return (
         <group ref={playerRef} position={[0, 0, 0]}>
-            {/* Visual representation of player (capsule/cylinder) */}
-            <mesh position={[0, 1, 0]}>
-                <capsuleGeometry args={[0.3, 1, 4, 8]} />
-                <meshStandardMaterial color="hotpink" />
-            </mesh>
-            {/* Simple face/direction indicator */}
-            <mesh position={[0, 1.5, -0.3]} scale={[0.5, 0.2, 0.2]}>
-                <boxGeometry />
-                <meshStandardMaterial color="black" />
+            <CharacterModel scale={[0.3, 0.3, 0.3]} />
+            {/* Debug Box to find player if model is invisible */}
+            <mesh visible={false}>
+                <boxGeometry args={[1, 2, 1]} />
+                <meshBasicMaterial wireframe color="blue" />
             </mesh>
         </group>
     );

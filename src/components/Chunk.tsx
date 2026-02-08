@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { getTerrainHeight, getPathX, CHUNK_SIZE } from '../utils/terrain';
+import { TreeModel } from './TreeModel';
+import { RockModel } from './RockModel';
 
 interface ChunkProps {
     xIndex: number; // Chunk Grid X
@@ -39,7 +41,7 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
     // 2. Generate Trees for this Chunk
     const treeData = useMemo(() => {
         const trees = [];
-        const numTrees = 20; // Trees per chunk
+        const numTrees = 5; // Trees per chunk
 
         for (let i = 0; i < numTrees; i++) {
             const lx = (Math.random() - 0.5) * CHUNK_SIZE; // Local X
@@ -81,35 +83,17 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
                 const { position, scale, type } = tree;
                 return (
                     <group key={i} position={position} scale={[scale, scale, scale]}>
-                        {(type === 0 || type === 1) && ( // Trunk
-                            <mesh position={[0, 1, 0]}>
-                                <cylinderGeometry args={[0.2, 0.4, 2, 5]} />
-                                <meshStandardMaterial color="#3E2723" />
-                            </mesh>
+                        {(type === 0) && (
+                            <TreeModel variant="large" />
                         )}
-                        {type === 0 && ( /* Pine */
-                            <mesh position={[0, 2.5, 0]}>
-                                <coneGeometry args={[1.5, 3, 5]} />
-                                <meshStandardMaterial color="#1B5E20" />
-                            </mesh>
+                        {(type === 1) && (
+                            <TreeModel variant="medium" />
                         )}
-                        {type === 1 && ( /* Round */
-                            <mesh position={[0, 2.5, 0]}>
-                                <dodecahedronGeometry args={[1.2]} />
-                                <meshStandardMaterial color="#4CAF50" />
-                            </mesh>
-                        )}
-                        {type === 2 && ( /* Rock */
-                            <mesh position={[0, 0.5, 0]} scale={[1.5, 0.8, 1.5]}>
-                                <dodecahedronGeometry args={[0.5]} />
-                                <meshStandardMaterial color="#757575" />
-                            </mesh>
+                        {type === 2 && Math.random() < 0.3 && ( /* Rock */
+                            <RockModel scale={[0.1, 0.1, 0.1]} rotation={[0, Math.random() * Math.PI, 0]} />
                         )}
                         {type === 3 && ( /* Bush */
-                            <mesh position={[0, 0.5, 0]}>
-                                <icosahedronGeometry args={[0.6, 0]} />
-                                <meshStandardMaterial color="#66BB6A" />
-                            </mesh>
+                            <TreeModel variant="bush" />
                         )}
                     </group>
                 )
