@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getTerrainHeight } from '../utils/terrain';
 
 export const Player = () => {
     const playerRef = useRef<THREE.Group>(null);
@@ -35,6 +36,8 @@ export const Player = () => {
         };
     }, []);
 
+
+
     useFrame((state, delta) => {
         if (!playerRef.current) return;
 
@@ -52,31 +55,31 @@ export const Player = () => {
         // Forward/Backward
         const direction = new THREE.Vector3();
         playerRef.current.getWorldDirection(direction);
-        // direction is z-forward for default objects usually, but need to check model orientation
-        // In Three.js default lookAt is -Z? 
-        // Let's assume standard forward is +Z or -Z.getWorldDirection gives vector. 
-        // Usually objects face +Z or -Z. Let's try.
 
-        // Actually getWorldDirection returns a normalized vector pointing in the direction the object's positive Z axis is facing.
-        // Wait, default camera looks down -Z. 
-
+        // Calculate potential new position
+        const moveVec = new THREE.Vector3();
         if (keys['ArrowUp'] || keys['w']) {
-            playerRef.current.position.add(direction.multiplyScalar(-speed));
+            moveVec.add(direction.multiplyScalar(-speed));
         }
         if (keys['ArrowDown'] || keys['s']) {
-            playerRef.current.position.add(direction.multiplyScalar(speed));
+            moveVec.add(direction.multiplyScalar(speed));
         }
 
+        playerRef.current.position.add(moveVec);
+
+        // Snap to Terrain
+        const terrainHeight = getTerrainHeight(playerRef.current.position.x, playerRef.current.position.z);
+        playerRef.current.position.y = terrainHeight;
+
         // Camera Follow
-        // Third person view: camera behind and slightly above
         const cameraOffset = new THREE.Vector3(0, 3, 6);
-        cameraOffset.applyQuaternion(playerRef.current.quaternion); // Rotate offset with player
+        cameraOffset.applyQuaternion(playerRef.current.quaternion);
         const targetPosition = playerRef.current.position.clone().add(cameraOffset);
 
-        // Smooth camera movement using lerp
+        // Smooth camera movement
         camera.position.lerp(targetPosition, 0.1);
 
-        // Look at player + slightly ahead/up
+        // Look at player
         const lookAtTarget = playerRef.current.position.clone().add(new THREE.Vector3(0, 1.5, 0));
         camera.lookAt(lookAtTarget);
     });
