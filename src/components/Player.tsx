@@ -2,11 +2,12 @@ import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTerrainHeight } from '../utils/terrain';
-import { CharacterModel } from './CharacterModel';
+import { RiggedCharacter } from './RiggedCharacter';
 
 export const Player = () => {
     const playerRef = useRef<THREE.Group>(null);
     const { camera } = useThree();
+    const zoom = useRef(3.0); // Initial camera distance
 
     // Movement state
     const [keys, setKeys] = useState<{ [key: string]: boolean }>({
@@ -39,7 +40,7 @@ export const Player = () => {
 
 
 
-    useFrame((state, delta) => {
+    useFrame((_, delta) => {
         if (!playerRef.current) return;
 
         const speed = 5 * delta;
@@ -72,8 +73,13 @@ export const Player = () => {
         const terrainHeight = getTerrainHeight(playerRef.current.position.x, playerRef.current.position.z);
         playerRef.current.position.y = terrainHeight;
 
-        // Camera Follow (Closer)
-        const cameraOffset = new THREE.Vector3(0, 3, 5);
+        // Zoom Controls (+ / -)
+        if (keys['='] || keys['+'] || keys['Add']) zoom.current = Math.max(1.5, zoom.current - delta * 5);
+        if (keys['-'] || keys['_'] || keys['Subtract']) zoom.current = Math.min(10, zoom.current + delta * 5);
+
+        // Camera Follow (Dynamic Zoom)
+        const cameraY = Math.max(1.5, zoom.current * 0.4 + 1.0);
+        const cameraOffset = new THREE.Vector3(0, cameraY, zoom.current);
         cameraOffset.applyQuaternion(playerRef.current.quaternion);
         const targetPosition = playerRef.current.position.clone().add(cameraOffset);
 
@@ -87,7 +93,7 @@ export const Player = () => {
 
     return (
         <group ref={playerRef} position={[0, 0, 0]}>
-            <CharacterModel scale={[0.3, 0.3, 0.3]} />
+            <RiggedCharacter scale={[1, 1, 1]} />
             {/* Debug Box to find player if model is invisible */}
             <mesh visible={false}>
                 <boxGeometry args={[1, 2, 1]} />
