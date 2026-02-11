@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations, Html } from '@react-three/drei';
+import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { Pose } from 'kalidokit';
@@ -16,9 +16,6 @@ interface RiggedCharacterProps {
 }
 
 export function RiggedCharacter({ animation = "Idle", poseResult, ...props }: RiggedCharacterProps) {
-    // Debug ver
-    useEffect(() => { console.log("RiggedCharacter v5.0 - Final Correction (Sides & Z-1)"); }, []);
-
     const group = useRef<THREE.Group>(null);
     // Load the GLTF model
     const { scene, animations } = useGLTF('/models/character/character_rigged.gltf');
@@ -86,25 +83,9 @@ export function RiggedCharacter({ animation = "Idle", poseResult, ...props }: Ri
 
     }, [clonedScene]);
 
-    // Manual Pose Control State
-    const [manualPose, setManualPose] = React.useState<string>("Auto"); // Changed default to Auto
-    const [debugBones, setDebugBones] = React.useState<string[]>([]);
-
     // Check if we should process pose from webcam
-    const processPose = manualPose === "Auto" && !!poseResult;
-
-    // Capture bone names on load for debug display
-    useEffect(() => {
-        if (clonedScene) {
-            const b: string[] = [];
-            clonedScene.traverse((child) => {
-                if ((child as THREE.Bone).isBone) {
-                    b.push(child.name);
-                }
-            });
-            setDebugBones(b);
-        }
-    }, [clonedScene]);
+    // Always process if result is available
+    const processPose = !!poseResult;
 
     // Helper to find bone by partial name
     const findBone = (partialName: string) => {
@@ -222,72 +203,13 @@ export function RiggedCharacter({ animation = "Idle", poseResult, ...props }: Ri
                 }
             }
         }
-        else if (manualPose === "Hands Up") {
-            // ... keep existing manual logic ...
-            // BUT we should probably move this to useFrame too if we want smooth updates or just setting it once is fine.
-            // Setting once in useEffect is fine for static poses.
-        }
-
     });
-
-    // Existing Manual Poses Effect for static poses
-    useEffect(() => {
-        if (!clonedScene) return;
-        if (processPose) return; // Skip if processing webcam
-
-        // Reset all rotations first
-        clonedScene.traverse((child) => {
-            if ((child as THREE.Bone).isBone) {
-                child.rotation.set(0, 0, 0);
-            }
-        });
-
-        if (manualPose === "Hands Up") {
-            const armL = findBone("arm_l") || findBone("upperarm_l") || findBone("shoulder_l");
-            const armR = findBone("arm_r") || findBone("upperarm_r") || findBone("shoulder_r");
-
-            if (armL) armL.rotation.z = Math.PI / 2; // Raise left arm
-            if (armR) armR.rotation.z = -Math.PI / 2; // Raise right arm
-        }
-
-        if (manualPose === "Bow") {
-            const spine = findBone("spine") || findBone("spine1") || findBone("hips");
-            if (spine) spine.rotation.x = Math.PI / 4; // Lean forward
-        }
-    }, [manualPose, clonedScene, processPose]);
 
 
     return (
         <group ref={group} {...props} dispose={null}>
             <group scale={0.01} rotation={[0, Math.PI, 0]}>
                 <primitive object={clonedScene} />
-                <Html position={[0, 2.2, 0]} center>
-                    <div style={{ background: 'rgba(0,0,0,0.8)', color: 'white', padding: '12px', borderRadius: '8px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '150px' }}>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '14px', borderBottom: '1px solid #555', paddingBottom: '4px' }}>Pose Controls</h3>
-
-                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                            <button onClick={() => setManualPose("Auto")} style={{ background: manualPose === "Auto" ? '#2196F3' : '#333', color: 'white', border: 'none', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: '1' }}>
-                                Webcam
-                            </button>
-                            <button onClick={() => setManualPose("T-Pose")} style={{ background: manualPose === "T-Pose" ? '#4CAF50' : '#333', color: 'white', border: 'none', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: '1' }}>
-                                T-Pose
-                            </button>
-                            <button onClick={() => setManualPose("Hands Up")} style={{ background: manualPose === "Hands Up" ? '#4CAF50' : '#333', color: 'white', border: 'none', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: '1' }}>
-                                Hands Up
-                            </button>
-                            <button onClick={() => setManualPose("Bow")} style={{ background: manualPose === "Bow" ? '#4CAF50' : '#333', color: 'white', border: 'none', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: '1' }}>
-                                Bow
-                            </button>
-                        </div>
-
-                        {/* Helper UI */}
-                        <div style={{ marginTop: '5px', fontSize: '10px', color: '#aaa' }}>
-                            {processPose ? "Tracking..." : "Manual Mode"}
-                        </div>
-
-                        {/* ... bone list ... */}
-                    </div>
-                </Html>
             </group>
         </group>
     );

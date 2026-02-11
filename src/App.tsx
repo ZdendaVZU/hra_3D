@@ -88,8 +88,8 @@ function App() {
           console.log("Requesting webcam access...");
           const constraints: MediaStreamConstraints = {
             video: {
-              width: 640,
-              height: 480,
+              width: 320,
+              height: 240,
               deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined
             }
           };
@@ -182,6 +182,11 @@ function App() {
     <div className="container" style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {loading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10, color: 'white' }}>Loading AI Model...</div>}
       {errorMsg && <div style={{ position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', zIndex: 20, color: 'red', backgroundColor: 'rgba(0,0,0,0.8)', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Error: {errorMsg}</div>}
+      {/* Webcam and Debug Canvas - Hidden for Logic Only (Must be "visible" for browser to update) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0.001, pointerEvents: 'none', zIndex: -100 }}>
+        <Webcam ref={videoRef} width={320} height={240} />
+        <Canvas ref={canvasRef} width={320} height={240} />
+      </div>
       <button
         onClick={() => setIsSettingsOpen(true)}
         style={{
@@ -225,13 +230,7 @@ function App() {
         <Scene3D poseResult={poseResult} />
       </div>
 
-      {/* Webcam and Debug Canvas - Moved to Bottom Left */}
-      <div style={{ position: 'absolute', bottom: '20px', left: '20px', width: '320px', height: '240px', border: '2px solid white', borderRadius: '8px', overflow: 'hidden', zIndex: 100, backgroundColor: 'black' }}>
-        <Webcam ref={videoRef} width={320} height={240} />
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '320px', height: '240px' }}>
-          <Canvas ref={canvasRef} width={320} height={240} />
-        </div>
-      </div>
+
     </div>
   );
 }
