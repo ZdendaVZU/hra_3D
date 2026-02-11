@@ -20,7 +20,15 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
         geo.rotateX(-Math.PI / 2); // Lay flat
 
         const posAttribute = geo.attributes.position;
-        for (let i = 0; i < posAttribute.count; i++) {
+        const vertexCount = posAttribute.count;
+
+        // Colors
+        const colors = new Float32Array(vertexCount * 3);
+        const grassColor = new THREE.Color("#2E8B57");
+        const pathColor = new THREE.Color("#8B5A2B"); // Dirt path color
+        const tempColor = new THREE.Color();
+
+        for (let i = 0; i < vertexCount; i++) {
             // Get local coordinates (PlaneGeometry centers at 0,0)
             const lx = posAttribute.getX(i);
             const lz = posAttribute.getZ(i); // Originally Y, but we rotated X -90
@@ -32,8 +40,29 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
             // Apply height
             const height = getTerrainHeight(wx, wz);
             posAttribute.setY(i, height);
+
+            // Calculate Path Color
+            const pathX = getPathX(wz);
+            const distToPath = Math.abs(wx - pathX);
+            const pathWidth = 4;
+            const blendDistance = 3;
+
+            let t = 0; // 0 = grass, 1 = path
+            if (distToPath < pathWidth) {
+                t = 1;
+            } else if (distToPath < pathWidth + blendDistance) {
+                t = 1 - (distToPath - pathWidth) / blendDistance;
+            }
+
+            // Mix colors (pathColor for path, grassColor for terrain)
+            tempColor.copy(grassColor).lerp(pathColor, t);
+
+            colors[i * 3] = tempColor.r;
+            colors[i * 3 + 1] = tempColor.g;
+            colors[i * 3 + 2] = tempColor.b;
         }
 
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         geo.computeVertexNormals();
         return geo;
     }, [xIndex, zIndex, worldX, worldZ]);
@@ -51,8 +80,8 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
             const wz = worldZ + lz;
 
             const pathX = getPathX(wz);
-            // Check Path collision
-            if (Math.abs(wx - pathX) > 4) {
+            // Check Path collision (ensure trees are off the path + blend area)
+            if (Math.abs(wx - pathX) > 6) {
                 const y = getTerrainHeight(wx, wz);
                 trees.push({
                     position: [lx, y, lz] as [number, number, number], // Position relative to chunk center [0,0,0] if mesh is at [worldX, 0, worldZ]??
@@ -75,7 +104,7 @@ export const Chunk = ({ xIndex, zIndex }: ChunkProps) => {
         <group position={[worldX, 0, worldZ]}>
             {/* Terrain Mesh */}
             <mesh geometry={terrainGeometry}>
-                <meshStandardMaterial color="#2E8B57" wireframe={false} flatShading />
+                <meshStandardMaterial vertexColors wireframe={false} flatShading />
             </mesh>
 
             {/* Trees */}

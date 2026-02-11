@@ -2,7 +2,13 @@ import { Sky } from '@react-three/drei';
 import { ChunkManager } from './ChunkManager';
 import { Player } from './Player';
 
-export const World = () => {
+import type { PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+
+interface WorldProps {
+    poseResult: PoseLandmarkerResult | null;
+}
+
+export const World = ({ poseResult }: WorldProps) => {
     return (
         <>
             <ambientLight intensity={0.5} />
@@ -16,7 +22,7 @@ export const World = () => {
             <fog attach="fog" args={['#c0d8ff', 10, 90]} />
 
             <ChunkManager />
-            <Player />
+            <Player poseResult={poseResult} />
         </>
     );
 };

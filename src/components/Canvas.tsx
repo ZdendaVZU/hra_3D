@@ -13,7 +13,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
                 width={width}
                 height={height}
                 className="transform -scale-x-100 pointer-events-none" // Mirror
-                style={{ backgroundColor: 'black' }}
+                style={{ position: 'absolute', top: 0, left: 0 }}
             />
         );
     }

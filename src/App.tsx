@@ -4,6 +4,8 @@ import { Webcam } from './components/Webcam';
 import { Canvas } from './components/Canvas';
 import { createPoseLandmarker, createHandLandmarker, createFaceLandmarker, drawPose, drawHands, drawFace } from './utils/poseDetection';
 import { PoseLandmarker, HandLandmarker, FaceLandmarker } from '@mediapipe/tasks-vision';
+import type { PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+
 
 import { SettingsModal } from './components/SettingsModal';
 import { Scene3D } from './components/Scene3D';
@@ -16,14 +18,16 @@ function App() {
   const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [poseResult, setPoseResult] = useState<PoseLandmarkerResult | null>(null);
 
+  // Settings state
   // Settings state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
   const [numPoses, setNumPoses] = useState(1);
-  const [enableHands, setEnableHands] = useState(true);
-  const [enableFace, setEnableFace] = useState(true);
+  const [enableHands, setEnableHands] = useState(false);
+  const [enableFace, setEnableFace] = useState(false);
 
   // Initialize AI Models
   useEffect(() => {
@@ -131,6 +135,7 @@ function App() {
         // Use timestamp to avoid MediaPipe warnings/errors
         const startTimeMs = performance.now();
         const poseResult = landmarker.detectForVideo(video, startTimeMs);
+        setPoseResult(poseResult);
 
         let handResult = null;
         if (handLandmarker) {
@@ -217,13 +222,15 @@ function App() {
       />
 
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#111' }}>
-        <Scene3D />
+        <Scene3D poseResult={poseResult} />
       </div>
 
-      {/* Hidden webcam for background processing if needed later */}
-      <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
-        <Webcam ref={videoRef} width={640} height={480} />
-        <Canvas ref={canvasRef} width={640} height={480} />
+      {/* Webcam and Debug Canvas - Moved to Bottom Left */}
+      <div style={{ position: 'absolute', bottom: '20px', left: '20px', width: '320px', height: '240px', border: '2px solid white', borderRadius: '8px', overflow: 'hidden', zIndex: 100, backgroundColor: 'black' }}>
+        <Webcam ref={videoRef} width={320} height={240} />
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '320px', height: '240px' }}>
+          <Canvas ref={canvasRef} width={320} height={240} />
+        </div>
       </div>
     </div>
   );
